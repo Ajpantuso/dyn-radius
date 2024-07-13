@@ -23,6 +23,7 @@ COPY --from=builder /usr/src/app/main dyn-radius
 USER nobody
 
 EXPOSE 51812
+EXPOSE 8080
 VOLUME [ "/opt/dyn-radius/config" ]
 
 ENTRYPOINT [ "/opt/dyn-radius/dyn-radius" ]

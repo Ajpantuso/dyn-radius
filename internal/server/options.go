@@ -17,6 +17,12 @@ func (w WithBindAddress) ConfigureServer(c *ServerConfig) {
 	c.BindAddr = string(w)
 }
 
+type WithHealthAddress string
+
+func (w WithHealthAddress) ConfigureServer(c *ServerConfig) {
+	c.HealthAddr = string(w)
+}
+
 type WithSecret string
 
 func (w WithSecret) ConfigureServer(c *ServerConfig) {

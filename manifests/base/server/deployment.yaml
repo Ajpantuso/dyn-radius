@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2024 Andrew Pantuso <ajpantuso@gmail.com>
+#
+# SPDX-License-Identifier: MPL-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+spec:
+  selector:
+  template:
+    spec:
+      containers:
+      - name: server
+        image: server
+        env:
+        - name: DYN_RADIUS_ALLOWED_CLIENT_SOURCES
+          valueFrom:
+            configMapKeyRef:
+              name: server
+              key: allowedClientSources
+        - name: DYN_RADIUS_VALID_USERS
+          valueFrom:
+            configMapKeyRef:
+              name: server
+              key: validUsers
+        volumeMounts:
+        - name: secrets
+          mountPath: /opt/dyn-radius/config
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        ports:
+        - name: auth
+          containerPort: 51812
+          protocol: UDP
+        - name: health
+          containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: 3
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: secrets
+        secret:
+          secretName: server-secrets
+          items:
+          - key: client-secret
+            path: client-secret
+            mode: 0400
+          - key: totp-secret
+            path: totp-secret
+            mode: 0400
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault

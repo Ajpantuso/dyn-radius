@@ -37,6 +37,7 @@ func main() {
 
 	srv := server.NewServer(
 		server.WithBindAddress(cfg.BindAddr),
+		server.WithHealthAddress(cfg.HealthAddr),
 		server.WithLogger{
 			Logger: serverLogger,
 		},
@@ -56,7 +57,7 @@ func main() {
 		},
 	)
 
-	logger.Info("starting server", "bindAddr", cfg.BindAddr)
+	logger.Info("starting server", "bindAddr", cfg.BindAddr, "healthAddr", cfg.HealthAddr)
 	if err := srv.Run(ctx); err != nil {
 		logger.Error(err, "server exited unexpectedly")
 

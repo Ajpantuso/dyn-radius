@@ -54,6 +54,7 @@ func Load() (*Config, error) {
 	return &Config{
 		AllowedClientSources: allowedClientSources,
 		BindAddr:             viper.GetString("bind-addr"),
+		HealthAddr:           viper.GetString("health-addr"),
 		ClientSecret:         clientSecret,
 		TOTPSecret:           totpSecret,
 	}, nil
@@ -62,6 +63,7 @@ func Load() (*Config, error) {
 func processFlags() error {
 	pflag.String("allowed-client-sources", "", "network from which client requests are allowed")
 	pflag.String("bind-addr", ":51812", "bind address for the RADIUS server")
+	pflag.String("health-addr", ":8080", "bind address for the health endpoint")
 	pflag.String("client-secret-path", "./config/client-secret", "path to file containing client secret")
 	pflag.String("totp-secret-path", "./config/totp-secret", "path to file containing totp secret")
 	pflag.StringSlice("valid-users", []string{}, "valid usernames for authentication")
@@ -74,6 +76,7 @@ func processEnvVars() error {
 	for _, vs := range [][]string{
 		{"allowed-client-sources", "DYN_RADIUS_ALLOWED_CLIENT_SOURCES"},
 		{"bind-addr", "DYN_RADIUS_BIND_ADDR"},
+		{"health-addr", "DYN_RADIUS_HEALTH_ADDR"},
 		{"client-secret-path", "DYN_RADIUS_CLIENT_SECRET_PATH"},
 		{"valid-users", "DYN_RADIUS_VALID_USERS"},
 	} {
@@ -97,6 +100,7 @@ func getSecret(path string) (string, error) {
 type Config struct {
 	AllowedClientSources *net.IPNet
 	BindAddr             string
+	HealthAddr           string
 	ClientSecret         string
 	TOTPSecret           string
 }

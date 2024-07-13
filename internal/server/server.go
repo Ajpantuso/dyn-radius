@@ -6,9 +6,11 @@ package server
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/go-logr/logr"
+	"go.uber.org/multierr"
 	"layeh.com/radius"
 )
 
@@ -18,9 +20,16 @@ func NewServer(opts ...ServerOption) *Server {
 	cfg.Options(opts...)
 	cfg.Default()
 
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("ok"))
+	})
+
 	return &Server{
 		log: cfg.Logger,
-		srv: &radius.PacketServer{
+		httpServer: &http.Server{
+			Addr: cfg.HealthAddr,
+		},
+		radiusSrv: &radius.PacketServer{
 			Addr:         cfg.BindAddr,
 			Handler:      cfg.Handler,
 			SecretSource: radius.StaticSecretSource([]byte(cfg.Secret)),
@@ -29,15 +38,20 @@ func NewServer(opts ...ServerOption) *Server {
 }
 
 type Server struct {
-	srv *radius.PacketServer
-	log logr.Logger
+	log        logr.Logger
+	httpServer *http.Server
+	radiusSrv  *radius.PacketServer
 }
 
 func (s *Server) Run(ctx context.Context) error {
 	errCh := make(chan error)
 
 	go func() {
-		errCh <- s.srv.ListenAndServe()
+		errCh <- s.radiusSrv.ListenAndServe()
+	}()
+
+	go func() {
+		errCh <- s.httpServer.ListenAndServe()
 	}()
 
 	for {
@@ -48,7 +62,10 @@ func (s *Server) Run(ctx context.Context) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			return s.srv.Shutdown(ctx)
+			return multierr.Combine(
+				s.httpServer.Shutdown(ctx),
+				s.radiusSrv.Shutdown(ctx),
+			)
 		case err := <-errCh:
 			return err
 		}
@@ -56,10 +73,11 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 type ServerConfig struct {
-	BindAddr string
-	Secret   string
-	Handler  radius.Handler
-	Logger   logr.Logger
+	BindAddr   string
+	HealthAddr string
+	Secret     string
+	Handler    radius.Handler
+	Logger     logr.Logger
 }
 
 func (c *ServerConfig) Options(opts ...ServerOption) {
@@ -71,6 +89,10 @@ func (c *ServerConfig) Options(opts ...ServerOption) {
 func (c *ServerConfig) Default() {
 	if c.BindAddr == "" {
 		c.BindAddr = ":1812"
+	}
+
+	if c.HealthAddr == "" {
+		c.HealthAddr = ":8080"
 	}
 
 	if c.Handler == nil {
