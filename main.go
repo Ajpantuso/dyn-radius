@@ -22,24 +22,38 @@ func main() {
 
 	cfg, err := config.Load()
 	if err != nil {
-		fmt.Println("loading config: %w", err)
+		fmt.Printf("loading config: %v\n", err)
 		os.Exit(1)
 	}
 
 	zlog, err := zap.NewDevelopment()
 	if err != nil {
-		fmt.Println("initializing logger: %w", err)
+		fmt.Printf("initializing logger: %v\n", err)
 		os.Exit(1)
 	}
 
 	logger := zapr.NewLogger(zlog)
+	serverLogger := logger.WithName("server")
 
 	srv := server.NewServer(
 		server.WithBindAddress(cfg.BindAddr),
 		server.WithLogger{
-			Logger: logger.WithName("server"),
+			Logger: serverLogger,
 		},
 		server.WithSecret(cfg.ClientSecret),
+		server.WithHandler{
+			Handler: server.NewHandler(
+				server.WithAllowedClientSources{
+					AllowedClientSources: cfg.AllowedClientSources,
+				},
+				server.WithAuthenticator{
+					Authenticator: server.NewTOTPAuthenticator(cfg.TOTPSecret),
+				},
+				server.WithLogger{
+					Logger: serverLogger.WithName("handler"),
+				},
+			),
+		},
 	)
 
 	logger.Info("starting server", "bindAddr", cfg.BindAddr)

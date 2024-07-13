@@ -4,13 +4,14 @@
 
 module github.com/ajpantuso/dyn-radius
 
-go 1.22.2
+go 1.22.5
 
 require (
 	github.com/go-logr/logr v1.4.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0
+	github.com/xlzd/gotp v0.1.0
 	go.uber.org/zap v1.26.0
 	layeh.com/radius v0.0.0-20231213012653-1006025d24f8
 )

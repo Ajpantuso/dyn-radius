@@ -5,6 +5,8 @@
 package server
 
 import (
+	"net"
+
 	"github.com/go-logr/logr"
 	"layeh.com/radius"
 )
@@ -37,6 +39,28 @@ func (w WithLogger) ConfigureServer(c *ServerConfig) {
 	c.Logger = w.Logger
 }
 
-func (w WithLogger) ConfigureDefaultHandler(c *defaultHandlerConfig) {
+func (w WithLogger) ConfigureHandler(c *HandlerConfig) {
 	c.Logger = w.Logger
+}
+
+type WithAllowedClientSources struct {
+	AllowedClientSources *net.IPNet
+}
+
+func (w WithAllowedClientSources) ConfigureHandler(c *HandlerConfig) {
+	c.AllowedClientSources = w.AllowedClientSources
+}
+
+type WithAuthenticator struct {
+	Authenticator Authenticator
+}
+
+func (w WithAuthenticator) ConfigureHandler(c *HandlerConfig) {
+	c.Authenticator = w.Authenticator
+}
+
+type WithValidUsers []string
+
+func (w WithValidUsers) ConfigureTOTPAuthenticator(c *TOTPAuthenticatorConfig) {
+	c.ValidUsers = append(c.ValidUsers, w...)
 }
