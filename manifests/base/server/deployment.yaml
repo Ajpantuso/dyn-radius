@@ -57,7 +57,7 @@ spec:
       volumes:
       - name: secrets
         secret:
-          secretName: server-secrets
+          secretName: server
           defaultMode: 0400
           items:
           - key: client-secret
