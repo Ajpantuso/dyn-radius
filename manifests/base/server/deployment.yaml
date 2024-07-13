@@ -27,6 +27,7 @@ spec:
         volumeMounts:
         - name: secrets
           mountPath: /opt/dyn-radius/config
+          readOnly: true
         resources:
           limits:
             memory: "128Mi"
@@ -57,13 +58,13 @@ spec:
       - name: secrets
         secret:
           secretName: server-secrets
+          defaultMode: 0400
           items:
           - key: client-secret
             path: client-secret
-            mode: 0400
           - key: totp-secret
             path: totp-secret
-            mode: 0400
       securityContext:
+        fsGroup: 65534
         seccompProfile:
           type: RuntimeDefault
