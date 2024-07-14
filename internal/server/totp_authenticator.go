@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	"github.com/xlzd/gotp"
+	"layeh.com/radius/rfc2865"
 )
 
 func NewTOTPAuthenticator(secret string) *TOTPAuthenticator {
@@ -21,11 +22,16 @@ type TOTPAuthenticator struct {
 	totp gotp.TOTP
 }
 
-func (rp *TOTPAuthenticator) Authenticate(req Request) (Response, error) {
-	if slices.Contains(rp.cfg.ValidUsers, req.Username) {
+func (a *TOTPAuthenticator) Authenticate(req Request) (Response, error) {
+	var (
+		username = rfc2865.UserName_GetString(req.Req.Packet)
+		password = rfc2865.UserPassword_GetString(req.Req.Packet)
+	)
+
+	if slices.Contains(a.cfg.ValidUsers, username) {
 		return Deny(ResponseReasonUnknownUser), nil
 	}
-	if !rp.totp.VerifyTime(req.Password, req.Timestamp) {
+	if !a.totp.VerifyTime(password, req.Timestamp) {
 		return Deny(ResponseReasonInvalidPassword), nil
 	}
 

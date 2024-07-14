@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"layeh.com/radius"
-	"layeh.com/radius/rfc2865"
 )
 
 func NewHandler(opts ...HandlerOption) *Handler {
@@ -59,8 +58,7 @@ func (h *Handler) ServeRADIUS(w radius.ResponseWriter, r *radius.Request) {
 	}
 
 	res, err := h.cfg.Authenticator.Authenticate(Request{
-		Username:  rfc2865.UserName_GetString(r.Packet),
-		Password:  rfc2865.UserPassword_GetString(r.Packet),
+		Req:       r,
 		Timestamp: time.Now(),
 	})
 	if err != nil {
@@ -129,8 +127,7 @@ type Authenticator interface {
 }
 
 type Request struct {
-	Username  string
-	Password  string
+	Req       *radius.Request
 	Timestamp time.Time
 }
 
