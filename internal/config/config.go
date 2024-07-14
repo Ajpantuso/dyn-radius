@@ -13,6 +13,7 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"go.uber.org/zap/zapcore"
 )
 
 func Load() (*Config, error) {
@@ -57,6 +58,7 @@ func Load() (*Config, error) {
 		HealthAddr:           viper.GetString("health-addr"),
 		ClientSecret:         clientSecret,
 		TOTPSecret:           totpSecret,
+		LogLevel:   		  verbosityToLevel(viper.GetInt("verbosity")),
 	}, nil
 }
 
@@ -67,6 +69,7 @@ func processFlags() error {
 	pflag.String("client-secret-path", "./config/client-secret", "path to file containing client secret")
 	pflag.String("totp-secret-path", "./config/totp-secret", "path to file containing totp secret")
 	pflag.StringSlice("valid-users", []string{}, "valid usernames for authentication")
+	pflag.CountP("verbosity", "v", "increases the logging verbosity")
 	pflag.Parse()
 
 	return viper.BindPFlags(pflag.CommandLine)
@@ -97,10 +100,19 @@ func getSecret(path string) (string, error) {
 	return strings.TrimSpace(string(data)), nil
 }
 
+func verbosityToLevel(v int) zapcore.Level {
+	if v > 0 {
+		return zapcore.DebugLevel
+	}
+
+	return zapcore.InfoLevel
+}
+
 type Config struct {
 	AllowedClientSources *net.IPNet
 	BindAddr             string
 	HealthAddr           string
 	ClientSecret         string
 	TOTPSecret           string
+	LogLevel			 zapcore.Level
 }

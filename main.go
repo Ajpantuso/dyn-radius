@@ -26,11 +26,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	zlog, err := zap.NewDevelopment()
+	zlog, err := zap.NewDevelopment(zap.IncreaseLevel(cfg.LogLevel))
 	if err != nil {
 		fmt.Printf("initializing logger: %v\n", err)
 		os.Exit(1)
 	}
+	defer func() {
+		_ = zlog.Sync()
+	}()
 
 	logger := zapr.NewLogger(zlog)
 	serverLogger := logger.WithName("server")

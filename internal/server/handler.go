@@ -29,6 +29,9 @@ type Handler struct {
 }
 
 func (h *Handler) ServeRADIUS(w radius.ResponseWriter, r *radius.Request) {
+	debug := h.cfg.Logger.V(1)
+	debug.Info("received request", "request", r)
+
 	log := h.cfg.Logger.WithValues("remoteAddress", r.RemoteAddr)
 
 	log.Info("processing request")
@@ -46,6 +49,7 @@ func (h *Handler) ServeRADIUS(w radius.ResponseWriter, r *radius.Request) {
 
 	if !validSource {
 		log.Info("rejecting request")
+		debug.Info("invalid source IP", "allowedClientSources", h.cfg.AllowedClientSources, "source", r.RemoteAddr)
 
 		if err := w.Write(r.Response(radius.CodeAccessReject)); err != nil {
 			log.Error(err, "writing response")
@@ -71,6 +75,7 @@ func (h *Handler) ServeRADIUS(w radius.ResponseWriter, r *radius.Request) {
 
 	if !res.approved {
 		log.Info("rejecting request")
+		debug.Info("rejecting request", "reasons", res.reasons)
 
 		if err := w.Write(r.Response(radius.CodeAccessReject)); err != nil {
 			log.Error(err, "writing response")
